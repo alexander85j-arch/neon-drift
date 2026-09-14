@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Neon Drift</title>
+<style>
+  :root{
+    --bg-0:#070912;
+    --bg-1:#0d1128;
+    --grid:#161c3e;
+    --player:#4bf5ff;
+    --player-glow:#0aa8c9;
+    --danger:#ff3d8b;
+    --danger-glow:#8a0f45;
+    --gem:#ffd84a;
+    --gem-glow:#a8790a;
+    --good:#6cffb8;
+    --ink:#eaf0ff;
+    --ink-dim:#8892b8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:var(--bg-0);
+    overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    touch-action:none;
+    user-select:none;
+  }
+  #wrap{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  canvas{
+    display:block;
+    background:radial-gradient(ellipse at 50% 20%, var(--bg-1), var(--bg-0) 70%);
+    touch-action:none;
+  }
+  .hud{
+    position:fixed; top:0; left:0; right:0;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    padding:18px 20px;
+    pointer-events:none;
+    z-index:5;
+  }
+  .score{
+    font-size:34px; font-weight:800; color:var(--ink);
+    letter-spacing:0.5px;
+    text-shadow:0 0 18px rgba(75,245,255,0.35);
+    font-variant-numeric:tabular-nums;
+  }
+  .score .lbl{
+    display:block; font-size:11px; font-weight:600; color:var(--ink-dim);
+    letter-spacing:1.5px; margin-bottom:2px;
+  }
+  .lives{ display:flex; gap:6px; margin-top:4px; }
+  .heart{
+    width:14px; height:14px; border-radius:50%;
+    background:var(--danger);
+    box-shadow:0 0 10px var(--danger);
+  }
+  .heart.off{ background:#2a2f4a; box-shadow:none; }
+  .combo{
+    position:fixed; top:80px; left:50%; transform:translateX(-50%);
+    font-size:15px; font-weight:700; color:var(--good);
+    text-shadow:0 0 12px rgba(108,255,184,0.6);
+    opacity:0; transition:opacity .15s ease, transform .15s ease;
+    pointer-events:none; z-index:5;
+  }
+  .combo.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .overlay{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    flex-direction:column;
+    background:rgba(7,9,18,0.82);
+    backdrop-filter:blur(6px);
+    -webkit-backdrop-filter:blur(6px);
+    z-index:10;
+    text-align:center;
+    padding:24px;
+  }
+  .overlay.hidden{ display:none; }
+  .title{
+    font-size:44px; font-weight:900; letter-spacing:-1px;
+    color:var(--ink); margin:0 0 6px;
+    text-shadow:0 0 30px rgba(75,245,255,0.45);
+  }
+  .title span{ color:var(--player); }
+  .subtitle{
+    font-size:15px; color:var(--ink-dim); margin:0 0 34px;
+    max-width:280px; line-height:1.5;
+  }
+  .bigscore{
+    font-size:64px; font-weight:900; color:var(--player);
+    text-shadow:0 0 30px rgba(75,245,255,0.5);
+    margin:0;
+  }
+  .bigscore-lbl{
+    font-size:12px; font-weight:700; color:var(--ink-dim);
+    letter-spacing:2px; margin:0 0 4px;
+  }
+  .best{
+    font-size:14px; color:var(--gem); font-weight:700; margin:6px 0 30px;
+  }
+  .btn{
+    border:none; outline:none;
+    background:linear-gradient(180deg, var(--player), var(--player-glow));
+    color:#03151a; font-weight:800; font-size:17px;
+    padding:16px 46px; border-radius:100px;
+    box-shadow:0 0 0 2px rgba(75,245,255,0.15), 0 8px 24px rgba(75,245,255,0.35);
+    cursor:pointer;
+    letter-spacing:0.3px;
+  }
+  .btn:active{ transform:scale(0.96); }
+  .hint{
+    margin-top:22px; font-size:12px; color:var(--ink-dim);
+    display:flex; gap:14px; align-items:center;
+  }
+  .dot{ width:5px; height:5px; border-radius:50%; background:var(--gem); box-shadow:0 0 8px var(--gem); }
+  .muteBtn{
+    position:fixed; bottom:18px; right:18px; z-index:6;
+    width:46px; height:46px; border-radius:50%;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.14);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  }
+  .muteBtn svg{ width:20px; height:20px; }
+  .muteBtn .off{ display:none; }
+  .muteBtn.is-muted .on{ display:none; }
+  .muteBtn.is-muted .off{ display:block; }
+
+  .btn-ghost{
+    background:transparent;
+    color:var(--ink-dim);
+    box-shadow:none;
+    border:1px solid rgba(255,255,255,0.14);
+    padding:12px 34px;
+    font-size:14px;
+  }
+  .btn-link{
+    background:none; border:none; outline:none;
+    color:var(--ink-dim); font-size:13px;
+    text-decoration:underline; cursor:pointer;
+    padding:8px;
+  }
+  .boardBtn{
+    position:fixed; top:20px; left:50%; transform:translateX(-50%);
+    z-index:5; display:none;
+  }
+  .boardBtn.show{ display:block; }
+  .iconBtn{
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.14);
+    color:var(--ink-dim); font-size:12px; font-weight:700;
+    letter-spacing:1px; padding:9px 16px; border-radius:100px;
+    cursor:pointer; pointer-events:auto;
+  }
+
+  .tabs{ display:flex; gap:8px; margin:10px 0 20px; }
+  .tab{
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.1);
+    color:var(--ink-dim); font-weight:700; font-size:12px;
+    letter-spacing:0.6px; padding:9px 16px; border-radius:100px;
+    cursor:pointer;
+  }
+  .tab.active{
+    background:rgba(75,245,255,0.14);
+    border-color:rgba(75,245,255,0.4);
+    color:var(--player);
+  }
+  .boardList{
+    width:100%; max-width:340px; max-height:38vh; overflow-y:auto;
+    display:flex; flex-direction:column; gap:6px;
+    margin-bottom:18px;
+  }
+  .boardRow{
+    display:flex; align-items:center; gap:12px;
+    padding:10px 14px; border-radius:12px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.06);
+  }
+  .boardRow.top1{ border-color:rgba(255,216,74,0.5); background:rgba(255,216,74,0.08); }
+  .boardRow .rank{
+    width:22px; font-weight:800; color:var(--ink-dim); font-size:14px; text-align:center;
+  }
+  .boardRow.top1 .rank{ color:var(--gem); }
+  .boardRow .rname{
+    flex:1; text-align:left; font-weight:700; font-size:14px; color:var(--ink);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .boardRow .rscore{ font-weight:800; font-size:14px; color:var(--player); font-variant-numeric:tabular-nums; }
+  .boardEmpty, .boardLoading{ color:var(--ink-dim); font-size:13px; padding:20px 0; }
+  .prizeNote{ font-size:11px; color:var(--ink-dim); max-width:260px; margin:0 0 18px; line-height:1.5; }
+
+  .submitBox{ width:100%; max-width:280px; margin-bottom:20px; }
+  .submitBox input{
+    width:100%; box-sizing:border-box;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.14);
+    color:var(--ink); font-size:15px; font-weight:600;
+    padding:13px 16px; border-radius:12px; margin-bottom:9px;
+    outline:none;
+  }
+  .submitBox input::placeholder{ color:var(--ink-dim); font-weight:500; }
+  .submitBox input:focus{ border-color:rgba(75,245,255,0.5); }
+  .submitHint{ font-size:11px; color:var(--ink-dim); margin:-3px 0 12px; text-align:left; padding-left:2px; }
+  .submitStatus{ font-size:13px; font-weight:700; color:var(--good); margin:0 0 16px; min-height:16px; }
+
+  .leaderStrip{
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,216,74,0.08);
+    border:1px solid rgba(255,216,74,0.3);
+    border-radius:14px;
+    padding:12px 18px;
+    margin:0 0 26px;
+    max-width:300px;
+  }
+  .leaderStrip .flame{ font-size:20px; line-height:1; }
+  .leaderStrip .ltext{ text-align:left; }
+  .leaderStrip .llabel{
+    display:block; font-size:10px; font-weight:700; color:var(--gem);
+    letter-spacing:1px; margin-bottom:2px;
+  }
+  .leaderStrip .lscore{ font-size:18px; font-weight:900; color:var(--ink); }
+  .leaderStrip .lname{ font-size:12px; color:var(--ink-dim); font-weight:600; }
+  .beatLine{
+    font-size:13px; font-weight:700; color:var(--gem);
+    margin:0 0 16px;
+  }
+  .beatLine.isLeading{ color:var(--good); }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="game"></canvas>
+</div>
+
+<div class="hud">
+  <div class="score">
+    <span class="lbl">SCORE</span>
+    <span id="scoreVal">0</span>
+  </div>
+  <div style="text-align:right;">
+    <span class="lbl" style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); letter-spacing:1.5px; margin-bottom:6px; text-align:right;">LIVES</span>
+    <div class="lives" id="lives" style="justify-content:flex-end;"></div>
+  </div>
+</div>
+<div class="combo" id="combo">COMBO x2</div>
+
+<div class="overlay" id="startScreen">
+  <h1 class="title">NEON <span>DRIFT</span></h1>
+  <p class="subtitle">Dodge the magenta shards. Grab the gold gems. Survive as long as you can — the drift never slows down.</p>
+  <div class="leaderStrip" id="leaderStrip" style="display:none;">
+    <span class="flame">🔥</span>
+    <span class="ltext">
+      <span class="llabel">SCORE TO BEAT THIS WEEK</span>
+      <span class="lscore" id="leaderScore">—</span>
+      <span class="lname" id="leaderName"></span>
+    </span>
+  </div>
+  <button class="btn" id="startBtn">TAP TO PLAY</button>
+  <div class="hint"><span class="dot"></span> Drag or swipe to steer</div>
+  <button class="btn btn-ghost" id="boardOpenBtn2" style="margin-top:16px;">🏆 LEADERBOARD & PRIZE</button>
+</div>
+
+<div class="overlay hidden" id="overScreen">
+  <p class="bigscore-lbl">RUN OVER</p>
+  <p class="bigscore" id="finalScore">0</p>
+  <p class="best" id="bestScoreLine">BEST: 0</p>
+  <p class="beatLine" id="beatLine" style="display:none;"></p>
+
+  <div class="submitBox" id="submitBox">
+    <input type="text" id="nameInput" maxlength="16" placeholder="Your name">
+    <input type="tel" id="phoneInput" maxlength="20" placeholder="Phone number (mobile money)">
+    <p class="submitHint">Used only to send your cash prize if you win — never shown publicly.</p>
+    <p class="submitStatus" id="submitStatus"></p>
+    <button class="btn" id="submitScoreBtn" style="width:100%; padding:14px;">SAVE TO LEADERBOARD</button>
+  </div>
+
+  <button class="btn btn-ghost" id="retryBtn">DRIFT AGAIN</button>
+  <button class="btn-link" id="boardOpenBtn3">View leaderboard</button>
+</div>
+
+<div class="overlay hidden" id="boardScreen">
+  <p class="bigscore-lbl">LEADERBOARD</p>
+  <div class="tabs" id="boardTabs">
+    <button class="tab active" data-period="week">WEEKLY</button>
+    <button class="tab" data-period="month">MONTHLY</button>
+    <button class="tab" data-period="all">ALL-TIME</button>
+  </div>
+  <div class="boardList" id="boardList">
+    <p class="boardLoading">Loading scores…</p>
+  </div>
+  <p class="prizeNote" id="prizeNote">The top score when the weekly period ends wins the cash prize. Winners are contacted by the game owner.</p>
+  <button class="btn btn-ghost" id="boardCloseBtn">CLOSE</button>
+</div>
+
+<div class="muteBtn" id="muteBtn" title="Toggle sound">
+  <svg class="on" viewBox="0 0 24 24" fill="none" stroke="#eaf0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 6a9 9 0 0 1 0 12"></path></svg>
+  <svg class="off" viewBox="0 0 24 24" fill="none" stroke="#eaf0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreVal = document.getElementById('scoreVal');
+  const livesEl = document.getElementById('lives');
+  const comboEl = document.getElementById('combo');
+  const startScreen = document.getElementById('startScreen');
+  const overScreen = document.getElementById('overScreen');
+  const finalScoreEl = document.getElementById('finalScore');
+  const bestScoreLine = document.getElementById('bestScoreLine');
+  const startBtn = document.getElementById('startBtn');
+  const retryBtn = document.getElementById('retryBtn');
+  const muteBtn = document.getElementById('muteBtn');
+  const submitBox = document.getElementById('submitBox');
+  const nameInput = document.getElementById('nameInput');
+  const phoneInput = document.getElementById('phoneInput');
+  const submitScoreBtn = document.getElementById('submitScoreBtn');
+  const submitStatus = document.getElementById('submitStatus');
+  const boardScreen = document.getElementById('boardScreen');
+  const boardList = document.getElementById('boardList');
+  const boardTabs = document.getElementById('boardTabs');
+  const boardCloseBtn = document.getElementById('boardCloseBtn');
+  const prizeNote = document.getElementById('prizeNote');
+  const leaderStrip = document.getElementById('leaderStrip');
+  const leaderScoreEl = document.getElementById('leaderScore');
+  const leaderNameEl = document.getElementById('leaderName');
+  const beatLine = document.getElementById('beatLine');
+  let currentLeaderScore = null;
+
+  // ---------- audio engine (synthesized, no external files) ----------
+  let actx = null;
+  let muted = false;
+  let musicNodes = null;
+
+  function ensureAudio(){
+    if(!actx){
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if(actx.state === 'suspended') actx.resume();
+  }
+
+  function masterGain(){
+    const g = actx.createGain();
+    g.connect(actx.destination);
+    return g;
+  }
+
+  function tone(freq, t0, dur, {type='sine', gain=0.18, glideTo=null, gainNode=null} = {}){
+    if(muted || !actx) return;
+    const osc = actx.createOscillator();
+    const g = actx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if(glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, t0+dur);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(gain, t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(g);
+    g.connect(gainNode || actx.destination);
+    osc.start(t0);
+    osc.stop(t0+dur+0.02);
+  }
+
+  const sfx = {
+    start(){
+      ensureAudio();
+      const t = actx.currentTime;
+      tone(220, t, 0.18, {type:'triangle', gain:0.16, glideTo:660});
+    },
+    gem(comboLevel){
+      if(!actx) return;
+      const t = actx.currentTime;
+      const base = 660 + Math.min(comboLevel,6)*40;
+      tone(base, t, 0.09, {type:'square', gain:0.13});
+      tone(base*1.5, t+0.05, 0.12, {type:'sine', gain:0.11});
+    },
+    graze(){
+      if(!actx) return;
+      const t = actx.currentTime;
+      tone(880, t, 0.07, {type:'sine', gain:0.08});
+    },
+    hit(){
+      if(!actx) return;
+      const t = actx.currentTime;
+      tone(180, t, 0.22, {type:'sawtooth', gain:0.2, glideTo:60});
+      tone(90, t+0.02, 0.25, {type:'square', gain:0.14, glideTo:40});
+    },
+    gameover(){
+      if(!actx) return;
+      const t = actx.currentTime;
+      tone(320, t, 0.18, {type:'triangle', gain:0.16, glideTo:180});
+      tone(220, t+0.16, 0.22, {type:'triangle', gain:0.15, glideTo:110});
+      tone(140, t+0.34, 0.35, {type:'sine', gain:0.15, glideTo:60});
+    }
+  };
+
+  function updateMuteIcon(){
+    muteBtn.classList.toggle('is-muted', muted);
+  }
+  muteBtn.addEventListener('click', ()=>{
+    ensureAudio();
+    muted = !muted;
+    updateMuteIcon();
+  });
+
+  let DPR = Math.min(window.devicePixelRatio || 1, 2.5);
+  let W, H;
+
+  function resize(){
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- game state ----------
+  let state = 'idle'; // idle | playing | dead
+  let score = 0;
+  let bestScore = 0;
+  let lives = 3;
+  let maxLives = 3;
+  let comboCount = 0;
+  let comboTimer = 0;
+  let shakeT = 0, shakeMag = 0;
+  let invuln = 0;
+  let elapsed = 0;
+  let spawnTimer = 0;
+  let gemTimer = 0;
+  let gridOffset = 0;
+
+  const player = { x:0, y:0, r:16, targetX:0 };
+
+  let obstacles = [];
+  let gems = [];
+  let particles = [];
+
+  function resetGame(){
+    score = 0;
+    lives = maxLives;
+    comboCount = 0;
+    comboTimer = 0;
+    invuln = 1.2;
+    elapsed = 0;
+    spawnTimer = 0;
+    gemTimer = 0.6;
+    obstacles = [];
+    gems = [];
+    particles = [];
+    player.x = W/2;
+    player.y = H - Math.max(H*0.18, 110);
+    player.targetX = player.x;
+    renderLives();
+    scoreVal.textContent = '0';
+  }
+
+  function renderLives(){
+    livesEl.innerHTML = '';
+    for(let i=0;i<maxLives;i++){
+      const d = document.createElement('div');
+      d.className = 'heart' + (i < lives ? '' : ' off');
+      livesEl.appendChild(d);
+    }
+  }
+
+  // ---------- input ----------
+  let dragging = false;
+  function pointerX(e){
+    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+    return x;
+  }
+  function onDown(e){
+    dragging = true;
+    if(state==='playing') player.targetX = pointerX(e);
+  }
+  function onMove(e){
+    if(!dragging || state!=='playing') return;
+    player.targetX = pointerX(e);
+    e.preventDefault();
+  }
+  function onUp(){ dragging = false; }
+
+  canvas.addEventListener('mousedown', onDown);
+  canvas.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+  canvas.addEventListener('touchstart', onDown, {passive:true});
+  canvas.addEventListener('touchmove', onMove, {passive:false});
+  canvas.addEventListener('touchend', onUp);
+
+  let keyDir = 0;
+  window.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowLeft') keyDir = -1;
+    if(e.key==='ArrowRight') keyDir = 1;
+  });
+  window.addEventListener('keyup', (e)=>{
+    if(e.key==='ArrowLeft' && keyDir===-1) keyDir = 0;
+    if(e.key==='ArrowRight' && keyDir===1) keyDir = 0;
+  });
+
+  // ---------- spawning ----------
+  function difficultyFactor(){
+    // ramps from 0 to 1 over ~55 seconds, then keeps inching up slowly
+    return Math.min(1.6, elapsed / 55);
+  }
+
+  function spawnObstacle(){
+    const df = difficultyFactor();
+    const shapes = ['tri','square','diamond'];
+    const shape = shapes[Math.floor(Math.random()*shapes.length)];
+    const size = 20 + Math.random()*16;
+    const x = size + Math.random() * (W - size*2);
+    const speed = (120 + df*230) + Math.random()*40;
+    const spin = (Math.random()-0.5) * 3;
+    obstacles.push({x, y:-size, size, speed, shape, rot:0, spin, grazed:false});
+  }
+
+  function spawnGem(){
+    const size = 10;
+    const x = size + Math.random() * (W - size*2);
+    const speed = 130 + difficultyFactor()*160;
+    gems.push({x, y:-size, size, speed, wob:Math.random()*Math.PI*2});
+  }
+
+  function burst(x,y,color,n){
+    for(let i=0;i<n;i++){
+      const a = Math.random()*Math.PI*2;
+      const sp = 60 + Math.random()*180;
+      particles.push({
+        x,y,
+        vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+        life:0.4+Math.random()*0.4, t:0,
+        color, size:2+Math.random()*3
+      });
+    }
+  }
+
+  function triggerShake(mag){
+    shakeMag = mag; shakeT = 0.25;
+  }
+
+  // ---------- update ----------
+  let lastT = performance.now();
+  function loop(now){
+    const dt = Math.min(0.033, (now-lastT)/1000);
+    lastT = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt){
+    gridOffset = (gridOffset + dt*70) % 40;
+
+    if(state !== 'playing'){
+      // idle floaty motion for player on menu
+      player.y = H - Math.max(H*0.18, 110);
+      player.x += (W/2 - player.x)*0.05;
+      return;
+    }
+
+    elapsed += dt;
+    score += dt * 12 * (1 + difficultyFactor()*0.5);
+    scoreVal.textContent = Math.floor(score).toString();
+
+    if(invuln>0) invuln -= dt;
+    if(shakeT>0) shakeT -= dt;
+
+    // steering
+    if(keyDir !== 0){
+      player.targetX += keyDir * 480 * dt;
+    }
+    player.targetX = Math.max(player.r+6, Math.min(W-player.r-6, player.targetX));
+    player.x += (player.targetX - player.x) * Math.min(1, dt*14);
+
+    // spawn timers
+    const df = difficultyFactor();
+    spawnTimer -= dt;
+    if(spawnTimer <= 0){
+      spawnObstacle();
+      const base = 0.95 - df*0.55;
+      spawnTimer = Math.max(0.28, base) * (0.75 + Math.random()*0.5);
+    }
+    gemTimer -= dt;
+    if(gemTimer <= 0){
+      spawnGem();
+      gemTimer = 1.6 + Math.random()*1.4;
+    }
+
+    // combo decay
+    if(comboTimer > 0){
+      comboTimer -= dt;
+      if(comboTimer <= 0){ comboCount = 0; comboEl.classList.remove('show'); }
+    }
+
+    // obstacles
+    for(let i=obstacles.length-1;i>=0;i--){
+      const o = obstacles[i];
+      o.y += o.speed*dt;
+      o.rot += o.spin*dt;
+
+      const dx = o.x-player.x, dy = o.y-player.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      const hitDist = o.size*0.62 + player.r*0.72;
+
+      if(dist < hitDist && invuln<=0){
+        loseLife();
+        obstacles.splice(i,1);
+        continue;
+      }
+
+      // graze / near miss bonus
+      if(!o.grazed && dist < hitDist + 26 && o.y > player.y - 60 && o.y < player.y + 20){
+        o.grazed = true;
+        addCombo(1);
+        burst(o.x, o.y, 'rgba(108,255,184,0.9)', 4);
+        sfx.graze();
+      }
+
+      if(o.y - o.size > H+40){ obstacles.splice(i,1); }
+    }
+
+    // gems
+    for(let i=gems.length-1;i>=0;i--){
+      const g = gems[i];
+      g.y += g.speed*dt;
+      g.wob += dt*6;
+      const dx=g.x-player.x, dy=g.y-player.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if(dist < g.size + player.r*0.8){
+        gems.splice(i,1);
+        const mult = 1 + comboCount*0.25;
+        score += 25*mult;
+        addCombo(1);
+        burst(g.x,g.y,'rgba(255,216,74,0.95)', 10);
+        sfx.gem(comboCount);
+        continue;
+      }
+      if(g.y-g.size > H+40) gems.splice(i,1);
+    }
+
+    // particles
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.t += dt;
+      if(p.t >= p.life){ particles.splice(i,1); continue; }
+      p.x += p.vx*dt; p.y += p.vy*dt;
+      p.vx *= 0.94; p.vy *= 0.94;
+    }
+  }
+
+  function addCombo(n){
+    comboCount += n;
+    comboTimer = 2.2;
+    if(comboCount >= 2){
+      comboEl.textContent = 'COMBO x' + (1+Math.floor(comboCount*0.25*10)/10).toFixed(1);
+      comboEl.classList.add('show');
+    }
+  }
+
+  function loseLife(){
+    lives -= 1;
+    invuln = 1.4;
+    comboCount = 0;
+    comboEl.classList.remove('show');
+    triggerShake(14);
+    burst(player.x, player.y, 'rgba(255,61,139,0.9)', 18);
+    renderLives();
+    sfx.hit();
+    if(lives <= 0){
+      endGame();
+    }
+  }
+
+  function endGame(){
+    state = 'dead';
+    bestScore = Math.max(bestScore, Math.floor(score));
+    finalScoreEl.textContent = Math.floor(score).toString();
+    bestScoreLine.textContent = 'BEST: ' + bestScore;
+    overScreen.classList.remove('hidden');
+    sfx.gameover();
+
+    submitBox.style.display = Math.floor(score) > 0 ? 'block' : 'none';
+    submitStatus.textContent = '';
+    submitScoreBtn.disabled = false;
+    submitScoreBtn.textContent = 'SAVE TO LEADERBOARD';
+    if(window.Leaderboard && window.Leaderboard.lastName){
+      nameInput.value = window.Leaderboard.lastName;
+    }
+
+    const finalScoreN = Math.floor(score);
+    if(currentLeaderScore === null){
+      beatLine.style.display = 'none';
+    } else if(finalScoreN > currentLeaderScore){
+      beatLine.textContent = "🎉 You just took the lead this week!";
+      beatLine.classList.add('isLeading');
+      beatLine.style.display = 'block';
+    } else {
+      const gap = currentLeaderScore - finalScoreN + 1;
+      beatLine.textContent = `Beat it by ${gap} more point${gap===1?'':'s'} to take the lead.`;
+      beatLine.classList.remove('isLeading');
+      beatLine.style.display = 'block';
+    }
+  }
+
+  function refreshLeader(){
+    if(!window.Leaderboard || !window.Leaderboard.getLeader) return;
+    window.Leaderboard.getLeader('week').then(leader=>{
+      if(leader){
+        currentLeaderScore = leader.score;
+        leaderScoreEl.textContent = leader.score;
+        leaderNameEl.textContent = 'held by ' + (leader.name || 'Anonymous');
+        leaderStrip.style.display = 'flex';
+      } else {
+        currentLeaderScore = null;
+        leaderStrip.style.display = 'none';
+      }
+    }).catch(()=>{ /* stay quiet on the start screen */ });
+  }
+
+  // ---------- draw ----------
+  function drawGrid(){
+    ctx.save();
+    ctx.strokeStyle = 'rgba(75,245,255,0.06)';
+    ctx.lineWidth = 1;
+    const size = 40;
+    for(let y=-size; y<H+size; y+=size){
+      const yy = y + gridOffset;
+      ctx.beginPath();
+      ctx.moveTo(0, yy);
+      ctx.lineTo(W, yy);
+      ctx.stroke();
+    }
+    for(let x=0; x<W; x+=size){
+      ctx.beginPath();
+      ctx.moveTo(x,0);
+      ctx.lineTo(x,H);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawPlayer(){
+    const blink = invuln > 0 && Math.floor(invuln*14)%2===0;
+    if(blink) return;
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    const grad = ctx.createRadialGradient(0,0,0,0,0,player.r*2.4);
+    grad.addColorStop(0,'rgba(75,245,255,0.55)');
+    grad.addColorStop(1,'rgba(75,245,255,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(0,0,player.r*2.4,0,Math.PI*2); ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(0,0,player.r,0,Math.PI*2);
+    ctx.fillStyle = '#0c1830';
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#4bf5ff';
+    ctx.shadowColor = '#4bf5ff';
+    ctx.shadowBlur = 18;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0,0,player.r*0.4,0,Math.PI*2);
+    ctx.fillStyle = '#eafeff';
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawObstacle(o){
+    ctx.save();
+    ctx.translate(o.x,o.y);
+    ctx.rotate(o.rot);
+    ctx.shadowColor = '#ff3d8b';
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = '#2a0d24';
+    ctx.strokeStyle = '#ff3d8b';
+    ctx.lineWidth = 2.5;
+    const s = o.size;
+    ctx.beginPath();
+    if(o.shape==='tri'){
+      ctx.moveTo(0,-s); ctx.lineTo(s*0.87,s*0.5); ctx.lineTo(-s*0.87,s*0.5); ctx.closePath();
+    } else if(o.shape==='square'){
+      ctx.rect(-s*0.7,-s*0.7,s*1.4,s*1.4);
+    } else {
+      ctx.moveTo(0,-s); ctx.lineTo(s*0.75,0); ctx.lineTo(0,s); ctx.lineTo(-s*0.75,0); ctx.closePath();
+    }
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawGem(g){
+    ctx.save();
+    const bob = Math.sin(g.wob)*3;
+    ctx.translate(g.x, g.y+bob);
+    ctx.rotate(Math.PI/4);
+    ctx.shadowColor = '#ffd84a';
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = '#ffe98a';
+    ctx.strokeStyle = '#ffd84a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(-g.size*0.65,-g.size*0.65,g.size*1.3,g.size*1.3);
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawParticles(){
+    for(const p of particles){
+      const a = 1 - p.t/p.life;
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+
+    let sx=0, sy=0;
+    if(shakeT>0){
+      const m = shakeMag * (shakeT/0.25);
+      sx = (Math.random()-0.5)*m;
+      sy = (Math.random()-0.5)*m;
+    }
+    ctx.save();
+    ctx.translate(sx,sy);
+
+    drawGrid();
+    for(const g of gems) drawGem(g);
+    for(const o of obstacles) drawObstacle(o);
+    drawParticles();
+    drawPlayer();
+
+    ctx.restore();
+  }
+
+  // ---------- flow ----------
+  function startGame(){
+    ensureAudio();
+    resetGame();
+    state = 'playing';
+    startScreen.classList.add('hidden');
+    overScreen.classList.add('hidden');
+    sfx.start();
+  }
+
+  startBtn.addEventListener('click', startGame);
+  retryBtn.addEventListener('click', startGame);
+
+  submitScoreBtn.addEventListener('click', async ()=>{
+    const name = (nameInput.value || '').trim().slice(0,16) || 'Anonymous';
+    const phone = (phoneInput.value || '').trim().slice(0,20);
+    const finalScoreN = Math.floor(score);
+    if(!phone){
+      submitStatus.style.color = 'var(--danger)';
+      submitStatus.textContent = 'Add a phone number to be eligible for the prize.';
+      return;
+    }
+    if(!window.Leaderboard){
+      submitStatus.textContent = 'Leaderboard not connected yet.';
+      return;
+    }
+    submitScoreBtn.disabled = true;
+    submitScoreBtn.textContent = 'SAVING…';
+    try{
+      await window.Leaderboard.submitScore(name, phone, finalScoreN);
+      submitStatus.style.color = 'var(--good)';
+      submitStatus.textContent = 'Saved! Good luck 🍀';
+      submitScoreBtn.textContent = 'SAVED ✓';
+      refreshLeader();
+    }catch(err){
+      console.error(err);
+      submitStatus.style.color = 'var(--danger)';
+      submitStatus.textContent = 'Could not save — check your connection.';
+      submitScoreBtn.disabled = false;
+      submitScoreBtn.textContent = 'SAVE TO LEADERBOARD';
+    }
+  });
+
+  function openBoard(){
+    boardScreen.classList.remove('hidden');
+    if(window.Leaderboard) window.Leaderboard.load('week');
+  }
+  function closeBoard(){
+    boardScreen.classList.add('hidden');
+  }
+  document.getElementById('boardOpenBtn2').addEventListener('click', openBoard);
+  document.getElementById('boardOpenBtn3').addEventListener('click', openBoard);
+  boardCloseBtn.addEventListener('click', closeBoard);
+
+  boardTabs.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.tab');
+    if(!btn) return;
+    [...boardTabs.children].forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    const period = btn.dataset.period;
+    const labels = {week:'weekly', month:'monthly', all:'all-time'};
+    prizeNote.textContent = period === 'all'
+      ? 'All-time board is for bragging rights — cash prizes are awarded to the weekly and monthly winners.'
+      : `The top score when the ${labels[period]} period ends wins the cash prize. Winners are contacted by the game owner.`;
+    if(window.Leaderboard) window.Leaderboard.load(period);
+  });
+
+  window.renderBoardRows = function(rows){
+    if(!rows || rows.length === 0){
+      boardList.innerHTML = '<p class="boardEmpty">No scores yet — be the first!</p>';
+      return;
+    }
+    boardList.innerHTML = rows.map((r,i)=>`
+      <div class="boardRow ${i===0?'top1':''}">
+        <span class="rank">${i+1}</span>
+        <span class="rname">${r.name}</span>
+        <span class="rscore">${r.score}</span>
+      </div>
+    `).join('');
+  };
+  window.renderBoardLoading = function(){
+    boardList.innerHTML = '<p class="boardLoading">Loading scores…</p>';
+  };
+  window.renderBoardError = function(){
+    boardList.innerHTML = '<p class="boardEmpty">Couldn\'t load scores. Check your connection.</p>';
+  };
+
+  player.x = 0; player.y = 0;
+  resize();
+  player.x = W/2; player.y = H - 120; player.targetX = player.x;
+
+  setTimeout(refreshLeader, 300); // small delay so the Firebase module has loaded
+
+  requestAnimationFrame(loop);
+})();
+</script>
+
+<script type="module">
+  // ===================================================================
+  // LEADERBOARD — backed by Firebase Firestore (free tier).
+  // 1. Create a project at https://console.firebase.google.com
+  // 2. Add a Web App, enable Firestore Database (production mode).
+  // 3. Paste your config below. See SETUP-FIREBASE.md for full steps
+  //    and the security rules you need to paste into the Firestore console.
+  // ===================================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyAPYM9VQTunhGfUv-n9-IadiI70QtH6n_o",
+    authDomain: "neon-drift-f0a66.firebaseapp.com",
+    projectId: "neon-drift-f0a66",
+    storageBucket: "neon-drift-f0a66.firebasestorage.app",
+    messagingSenderId: "75228925101",
+    appId: "1:75228925101:web:295945ec8d7681ee264a24"
+  };
+
+  const isConfigured = firebaseConfig.apiKey !== "YOUR_API_KEY";
+
+  let db, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp, Timestamp;
+
+  async function initFirebase(){
+    if(!isConfigured) return null;
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js");
+    const fs = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
+    ({ collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp, Timestamp } = fs);
+    const app = initializeApp(firebaseConfig);
+    db = fs.getFirestore(app);
+    return db;
+  }
+  const readyPromise = initFirebase();
+
+  function startOfWeekUTC(){
+    const now = new Date();
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const day = d.getUTCDay(); // 0=Sun..6=Sat
+    const diffToMonday = (day === 0 ? -6 : 1 - day);
+    d.setUTCDate(d.getUTCDate() + diffToMonday);
+    d.setUTCHours(0,0,0,0);
+    return d;
+  }
+  function startOfMonthUTC(){
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0,0,0));
+  }
+
+  async function submitScore(name, phone, score){
+    await readyPromise;
+    if(!db) throw new Error('Firebase not configured');
+    await addDoc(collection(db, 'scores'), {
+      name, phone, score,
+      paid: false,
+      ts: serverTimestamp()
+    });
+    window.Leaderboard.lastName = name;
+  }
+
+  async function getLeader(period){
+    await readyPromise;
+    if(!db) return null;
+    const scoresRef = collection(db, 'scores');
+    const startDate = period === 'week' ? startOfWeekUTC() : startOfMonthUTC();
+    const qy = query(
+      scoresRef,
+      where('ts', '>=', Timestamp.fromDate(startDate)),
+      orderBy('ts'),
+      orderBy('score','desc'),
+      limit(50)
+    );
+    const snap = await getDocs(qy);
+    let top = null;
+    snap.forEach(doc => {
+      const d = doc.data();
+      if(!top || d.score > top.score) top = d;
+    });
+    return top;
+  }
+
+  async function loadBoard(period){
+    window.renderBoardLoading();
+    await readyPromise;
+    if(!db){
+      // Not configured yet — show a friendly placeholder instead of an error.
+      window.renderBoardRows([]);
+      return;
+    }
+    try{
+      let qy;
+      const scoresRef = collection(db, 'scores');
+      if(period === 'all'){
+        qy = query(scoresRef, orderBy('score','desc'), limit(20));
+      } else {
+        const startDate = period === 'week' ? startOfWeekUTC() : startOfMonthUTC();
+        qy = query(
+          scoresRef,
+          where('ts', '>=', Timestamp.fromDate(startDate)),
+          orderBy('ts'),
+          orderBy('score','desc'),
+          limit(20)
+        );
+      }
+      const snap = await getDocs(qy);
+      const rows = [];
+      snap.forEach(doc => rows.push(doc.data()));
+      rows.sort((a,b)=> b.score - a.score);
+      window.renderBoardRows(rows.slice(0,20));
+    }catch(err){
+      console.error(err);
+      window.renderBoardError();
+    }
+  }
+
+  window.Leaderboard = {
+    lastName: '',
+    submitScore,
+    load: loadBoard,
+    getLeader,
+    isConfigured
+  };
+</script>
+</body>
+</html>
