@@ -1,0 +1,31 @@
+{
+  "name": "Neon Drift",
+  "short_name": "Neon Drift",
+  "description": "Dodge the shards, grab the gems, top the weekly leaderboard.",
+  "start_url": "./neon-dodge-2.html",
+  "id": "./neon-dodge-2.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#070912",
+  "theme_color": "#070912",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
