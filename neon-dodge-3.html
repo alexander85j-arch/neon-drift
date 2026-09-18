@@ -229,6 +229,62 @@
   }
   .leaderStrip .lscore{ font-size:18px; font-weight:900; color:var(--ink); }
   .leaderStrip .lname{ font-size:12px; color:var(--ink-dim); font-weight:600; }
+
+  .powerRow{
+    display:flex; flex-direction:column; gap:8px; align-items:flex-end; margin-top:10px;
+  }
+  .powerBtn{
+    position:relative;
+    pointer-events:auto;
+    width:44px; height:44px; border-radius:14px;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+    display:flex; align-items:center; justify-content:center;
+    font-size:20px;
+  }
+  .powerBtn:disabled{ opacity:0.35; }
+  .powerBtn .pcount{
+    position:absolute; bottom:-6px; right:-6px;
+    background:#0c1830; border:1px solid rgba(255,255,255,0.25);
+    color:var(--ink); font-size:10px; font-weight:800;
+    min-width:18px; height:18px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center; padding:0 3px;
+  }
+  .shopXBtn{
+    align-self:flex-end;
+    width:40px; height:40px; border-radius:50%;
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16);
+    color:var(--ink); font-size:18px; font-weight:700;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:8px; flex-shrink:0;
+  }
+  .shopBtn{
+    margin-top:10px;
+  }
+  #shopScreen{ padding-top:64px; justify-content:flex-start; overflow-y:auto; }
+  #boardScreen{ padding-top:64px; justify-content:flex-start; overflow-y:auto; }
+  .shopSection{ width:100%; max-width:320px; text-align:left; margin-bottom:18px; }
+  .itemCard{
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:14px 16px; margin-bottom:12px;
+  }
+  .itemCard .ihead{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .itemCard .iicon{ font-size:26px; width:34px; text-align:center; }
+  .itemCard .iname{ font-weight:800; font-size:15px; color:var(--ink); }
+  .itemCard .idesc{ font-size:11.5px; color:var(--ink-dim); margin-top:2px; }
+  .itemCard .iowned{ margin-left:auto; font-weight:800; font-size:13px; color:var(--gem); white-space:nowrap; }
+  .itemCard .irow{ display:flex; gap:8px; }
+  .itemCard .adBtn{
+    flex:1; background:rgba(255,216,74,0.12); border:1px solid rgba(255,216,74,0.4);
+    color:var(--gem); font-weight:700; font-size:12px;
+    padding:11px 8px; border-radius:10px;
+  }
+  .itemCard .buyBtn{
+    flex:1; background:rgba(75,245,255,0.12); border:1px solid rgba(75,245,255,0.4);
+    color:var(--player); font-weight:700; font-size:12px;
+    padding:11px 8px; border-radius:10px;
+  }
+  .shopNote{ font-size:11px; color:var(--ink-dim); line-height:1.5; margin:2px 0 16px; }
   .beatLine{
     font-size:13px; font-weight:700; color:var(--gem);
     margin:0 0 16px;
@@ -248,7 +304,12 @@
   </div>
   <div style="text-align:right;">
     <span class="lbl" style="display:block; font-size:11px; font-weight:600; color:var(--ink-dim); letter-spacing:1.5px; margin-bottom:6px; text-align:right;">LIVES</span>
-    <div class="lives" id="lives" style="justify-content:flex-end;"></div>
+    <div style="font-size:20px; font-weight:900; color:var(--ink);">❤️ <span id="livesCount">3</span></div>
+    <div class="powerRow" id="powerRow">
+      <button class="powerBtn" id="useShieldBtn" title="Shield">🛡️<span class="pcount" id="cntShield">0</span></button>
+      <button class="powerBtn" id="useMagnetBtn" title="Magnet">🧲<span class="pcount" id="cntMagnet">0</span></button>
+      <button class="powerBtn" id="useExplosionBtn" title="Explosion">💥<span class="pcount" id="cntExplosion">0</span></button>
+    </div>
   </div>
 </div>
 <div class="combo" id="combo">COMBO x2</div>
@@ -267,6 +328,7 @@
   <button class="btn" id="startBtn">TAP TO PLAY</button>
   <div class="hint"><span class="dot"></span> Drag or swipe to steer</div>
   <button class="btn btn-ghost" id="boardOpenBtn2" style="margin-top:16px;">🏆 LEADERBOARD & PRIZE</button>
+  <button class="btn btn-ghost shopBtn" id="shopOpenBtn">🛒 SHOP & POWER-UPS</button>
 </div>
 
 <div class="overlay hidden" id="overScreen">
@@ -283,11 +345,15 @@
     <button class="btn" id="submitScoreBtn" style="width:100%; padding:14px;">SAVE TO LEADERBOARD</button>
   </div>
 
-  <button class="btn btn-ghost" id="retryBtn">DRIFT AGAIN</button>
+  <div style="display:flex; gap:10px; width:100%; max-width:280px;">
+    <button class="btn btn-ghost" id="homeBtn" style="flex:0 0 auto; padding:14px 18px;">🏠</button>
+    <button class="btn btn-ghost" id="retryBtn" style="flex:1;">DRIFT AGAIN</button>
+  </div>
   <button class="btn-link" id="boardOpenBtn3">View leaderboard</button>
 </div>
 
 <div class="overlay hidden" id="boardScreen">
+  <button class="shopXBtn" id="boardXBtn">✕</button>
   <p class="bigscore-lbl">LEADERBOARD</p>
   <div class="tabs" id="boardTabs">
     <button class="tab active" data-period="week">WEEKLY</button>
@@ -301,6 +367,18 @@
   <button class="btn btn-ghost" id="boardCloseBtn">CLOSE</button>
 </div>
 
+<div class="overlay hidden" id="shopScreen">
+  <button class="shopXBtn" id="shopXBtn">✕</button>
+  <p class="bigscore-lbl">SHOP</p>
+  <p class="shopNote" style="margin-bottom:18px; text-align:center;">Tap the icons under your hearts mid-run to use these — they help you survive and try again, they don't inflate your score, so the leaderboard stays fair.</p>
+
+  <div class="shopSection" id="shopItems"></div>
+
+  <p class="shopNote">Real purchases turn on once the app is published with Play Store billing — Buy buttons are placeholders for now. Watch Ad buttons grant items now for testing.</p>
+
+  <button class="btn btn-ghost" id="shopCloseBtn">CLOSE</button>
+</div>
+
 <div class="muteBtn" id="muteBtn" title="Toggle sound">
   <svg class="on" viewBox="0 0 24 24" fill="none" stroke="#eaf0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18.5 6a9 9 0 0 1 0 12"></path></svg>
   <svg class="off" viewBox="0 0 24 24" fill="none" stroke="#eaf0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
@@ -311,7 +389,6 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const scoreVal = document.getElementById('scoreVal');
-  const livesEl = document.getElementById('lives');
   const comboEl = document.getElementById('combo');
   const startScreen = document.getElementById('startScreen');
   const overScreen = document.getElementById('overScreen');
@@ -319,6 +396,7 @@
   const bestScoreLine = document.getElementById('bestScoreLine');
   const startBtn = document.getElementById('startBtn');
   const retryBtn = document.getElementById('retryBtn');
+  const homeBtn = document.getElementById('homeBtn');
   const muteBtn = document.getElementById('muteBtn');
   const submitBox = document.getElementById('submitBox');
   const nameInput = document.getElementById('nameInput');
@@ -334,7 +412,125 @@
   const leaderScoreEl = document.getElementById('leaderScore');
   const leaderNameEl = document.getElementById('leaderName');
   const beatLine = document.getElementById('beatLine');
+  const shopScreen = document.getElementById('shopScreen');
+  const shopOpenBtn = document.getElementById('shopOpenBtn');
+  const shopCloseBtn = document.getElementById('shopCloseBtn');
+  const shopItemsEl = document.getElementById('shopItems');
+  const livesCountEl = document.getElementById('livesCount');
   let currentLeaderScore = null;
+
+  // ---------- inventory / power-ups ----------
+  const ITEMS = {
+    health:    { name:'Health',    icon:'🩹', desc:'+1 life at the start of your next run',  adGain:1, buyAmt:1, buyPrice:'$1.49', shopOnly:true },
+    shield:    { name:'Shield',    icon:'🛡️', desc:'8s of invulnerability, right now',       adGain:1, buyAmt:1, buyPrice:'$0.99' },
+    magnet:    { name:'Magnet',    icon:'🧲', desc:'Pulls gems to you for 12s, right now',   adGain:1, buyAmt:1, buyPrice:'$0.99' },
+    explosion: { name:'Explosion', icon:'💥', desc:'Clears every obstacle on screen',        adGain:1, buyAmt:1, buyPrice:'$1.99' }
+  };
+  const HEALTH_ICON = '🩹'; // used by the mid-run rare drop too, which heals instantly and never touches save.inv.health
+
+  function loadSave(){
+    try{
+      const raw = localStorage.getItem('neonDriftSave');
+      if(raw){
+        const parsed = JSON.parse(raw);
+        if(parsed.inv){
+          parsed.inv.health = parsed.inv.health || 0;
+          parsed.inv.shield = parsed.inv.shield || 0;
+          parsed.inv.magnet = parsed.inv.magnet || 0;
+          parsed.inv.explosion = parsed.inv.explosion || 0;
+          return parsed;
+        }
+      }
+    }catch(e){}
+    return { inv: { health:0, shield:0, magnet:0, explosion:0 } };
+  }
+  function saveSave(){
+    try{ localStorage.setItem('neonDriftSave', JSON.stringify(save)); }catch(e){}
+  }
+  let save = loadSave();
+
+  function renderInventory(){
+    Object.keys(ITEMS).forEach(key=>{
+      const el = document.getElementById('cnt' + key[0].toUpperCase() + key.slice(1));
+      if(el) el.textContent = save.inv[key] || 0;
+    });
+    const canUse = state === 'playing';
+    useShieldBtn.disabled = !(canUse && save.inv.shield > 0);
+    useMagnetBtn.disabled = !(canUse && save.inv.magnet > 0);
+    useExplosionBtn.disabled = !(canUse && save.inv.explosion > 0);
+  }
+
+  function renderShopItems(){
+    shopItemsEl.innerHTML = Object.keys(ITEMS).map(key=>{
+      const it = ITEMS[key];
+      return `
+        <div class="itemCard">
+          <div class="ihead">
+            <div class="iicon">${it.icon}</div>
+            <div>
+              <div class="iname">${it.name}</div>
+              <div class="idesc">${it.desc}</div>
+            </div>
+            <div class="iowned">${save.inv[key]||0} owned</div>
+          </div>
+          <div class="irow">
+            <button class="adBtn" data-ad="${key}">▶️ Watch Ad · +${it.adGain}</button>
+            <button class="buyBtn" data-buy="${key}">Buy ${it.buyAmt} · ${it.buyPrice}</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    shopItemsEl.querySelectorAll('[data-ad]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const key = btn.dataset.ad;
+        save.inv[key] = (save.inv[key]||0) + ITEMS[key].adGain;
+        saveSave();
+        renderInventory();
+        renderShopItems();
+      });
+    });
+    shopItemsEl.querySelectorAll('[data-buy]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        alert('Real purchases turn on once the app ships with Play Store billing. This button is a placeholder for now.');
+      });
+    });
+  }
+
+  function openShop(){ shopScreen.classList.remove('hidden'); renderShopItems(); }
+  function closeShop(){ shopScreen.classList.add('hidden'); }
+  shopOpenBtn.addEventListener('click', openShop);
+  shopCloseBtn.addEventListener('click', closeShop);
+  document.getElementById('shopXBtn').addEventListener('click', closeShop);
+
+  // in-run "tap to use" buttons
+  const useShieldBtn = document.getElementById('useShieldBtn');
+  const useMagnetBtn = document.getElementById('useMagnetBtn');
+  const useExplosionBtn = document.getElementById('useExplosionBtn');
+
+  useShieldBtn.addEventListener('click', ()=>{
+    if(state !== 'playing' || save.inv.shield <= 0) return;
+    save.inv.shield--; saveSave();
+    invuln = Math.max(invuln, 8);
+    burst(player.x, player.y, 'rgba(75,245,255,0.9)', 16);
+    renderInventory();
+  });
+  useMagnetBtn.addEventListener('click', ()=>{
+    if(state !== 'playing' || save.inv.magnet <= 0) return;
+    save.inv.magnet--; saveSave();
+    magnetTimeLeft = Math.max(magnetTimeLeft, 12);
+    burst(player.x, player.y, 'rgba(255,216,74,0.9)', 16);
+    renderInventory();
+  });
+  useExplosionBtn.addEventListener('click', ()=>{
+    if(state !== 'playing' || save.inv.explosion <= 0) return;
+    save.inv.explosion--; saveSave();
+    sfx.thunder();
+    triggerShake(24);
+    obstacles.forEach(o=> burst(o.x, o.y, 'rgba(255,61,139,0.9)', 12));
+    obstacles = [];
+    renderInventory();
+  });
 
   // ---------- audio engine (synthesized, no external files) ----------
   let actx = null;
@@ -400,6 +596,34 @@
       tone(320, t, 0.18, {type:'triangle', gain:0.16, glideTo:180});
       tone(220, t+0.16, 0.22, {type:'triangle', gain:0.15, glideTo:110});
       tone(140, t+0.34, 0.35, {type:'sine', gain:0.15, glideTo:60});
+    },
+    thunder(){
+      if(muted || !actx) return;
+      const t = actx.currentTime;
+      // noise crack, filtered and swept down like a thunderclap
+      const bufferSize = Math.floor(actx.sampleRate * 0.5);
+      const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<bufferSize;i++){
+        data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufferSize, 2);
+      }
+      const noise = actx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = actx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(3200, t);
+      filter.frequency.exponentialRampToValueAtTime(110, t+0.5);
+      const noiseGain = actx.createGain();
+      noiseGain.gain.setValueAtTime(0.4, t);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, t+0.5);
+      noise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(actx.destination);
+      noise.start(t);
+      noise.stop(t+0.5);
+      // low rumble boom underneath the crack
+      tone(150, t, 0.5, {type:'sine', gain:0.32, glideTo:35});
+      tone(90, t+0.03, 0.45, {type:'triangle', gain:0.24, glideTo:30});
     }
   };
 
@@ -440,40 +664,49 @@
   let elapsed = 0;
   let spawnTimer = 0;
   let gemTimer = 0;
+  let powerDropTimer = 0;
   let gridOffset = 0;
+  let magnetTimeLeft = 0;
 
   const player = { x:0, y:0, r:16, targetX:0 };
 
   let obstacles = [];
   let gems = [];
   let particles = [];
+  let powerDrops = [];
 
   function resetGame(){
     score = 0;
+    // apply any banked Health bought/earned in the shop — consumed once, right here
+    const bonusLives = save.inv.health || 0;
+    if(bonusLives > 0){
+      save.inv.health = 0;
+      saveSave();
+    }
+    maxLives = 3 + bonusLives;
     lives = maxLives;
     comboCount = 0;
     comboTimer = 0;
     invuln = 1.2;
+    magnetTimeLeft = 0;
     elapsed = 0;
     spawnTimer = 0;
     gemTimer = 0.6;
+    powerDropTimer = 18 + Math.random()*10; // scarce — first one takes a while
     obstacles = [];
     gems = [];
     particles = [];
+    powerDrops = [];
     player.x = W/2;
     player.y = H - Math.max(H*0.18, 110);
     player.targetX = player.x;
     renderLives();
+    renderInventory();
     scoreVal.textContent = '0';
   }
 
   function renderLives(){
-    livesEl.innerHTML = '';
-    for(let i=0;i<maxLives;i++){
-      const d = document.createElement('div');
-      d.className = 'heart' + (i < lives ? '' : ' off');
-      livesEl.appendChild(d);
-    }
+    livesCountEl.textContent = lives;
   }
 
   // ---------- input ----------
@@ -512,8 +745,9 @@
 
   // ---------- spawning ----------
   function difficultyFactor(){
-    // ramps from 0 to 1 over ~55 seconds, then keeps inching up slowly
-    return Math.min(1.6, elapsed / 55);
+    // Dino-game style: keeps ramping up continuously, no plateau/ceiling —
+    // the longer you survive, the faster it gets, forever.
+    return elapsed / 55;
   }
 
   function spawnObstacle(){
@@ -532,6 +766,15 @@
     const x = size + Math.random() * (W - size*2);
     const speed = 130 + difficultyFactor()*160;
     gems.push({x, y:-size, size, speed, wob:Math.random()*Math.PI*2});
+  }
+
+  function spawnPowerDrop(){
+    const keys = Object.keys(ITEMS).concat(['health']); // health is a bonus drop type, not a shop item
+    const key = keys[Math.floor(Math.random()*keys.length)];
+    const size = 18;
+    const x = size + Math.random() * (W - size*2);
+    const speed = 110 + difficultyFactor()*90;
+    powerDrops.push({x, y:-size, size, speed, wob:Math.random()*Math.PI*2, key});
   }
 
   function burst(x,y,color,n){
@@ -598,6 +841,11 @@
       spawnGem();
       gemTimer = 1.6 + Math.random()*1.4;
     }
+    powerDropTimer -= dt;
+    if(powerDropTimer <= 0){
+      spawnPowerDrop();
+      powerDropTimer = 25 + Math.random()*20; // stays scarce — roughly every 25-45s
+    }
 
     // combo decay
     if(comboTimer > 0){
@@ -633,13 +881,22 @@
     }
 
     // gems
+    if(magnetTimeLeft > 0) magnetTimeLeft -= dt;
     for(let i=gems.length-1;i>=0;i--){
       const g = gems[i];
       g.y += g.speed*dt;
       g.wob += dt*6;
-      const dx=g.x-player.x, dy=g.y-player.y;
-      const dist = Math.sqrt(dx*dx+dy*dy);
-      if(dist < g.size + player.r*0.8){
+      let dx=g.x-player.x, dy=g.y-player.y;
+      let dist = Math.sqrt(dx*dx+dy*dy);
+      const magnetActive = magnetTimeLeft > 0;
+      if(magnetActive && dist < 260){
+        g.x += (player.x - g.x) * Math.min(1, dt*6);
+        g.y += (player.y - g.y) * Math.min(1, dt*6);
+        dx = g.x-player.x; dy = g.y-player.y;
+        dist = Math.sqrt(dx*dx+dy*dy);
+      }
+      const collectRadius = magnetActive ? 42 : (g.size + player.r*0.8);
+      if(dist < collectRadius){
         gems.splice(i,1);
         const mult = 1 + comboCount*0.25;
         score += 25*mult;
@@ -649,6 +906,30 @@
         continue;
       }
       if(g.y-g.size > H+40) gems.splice(i,1);
+    }
+
+    // power drops — rare pickups. Health heals instantly; the rest top up your inventory.
+    for(let i=powerDrops.length-1;i>=0;i--){
+      const p = powerDrops[i];
+      p.y += p.speed*dt;
+      p.wob += dt*5;
+      const dx=p.x-player.x, dy=p.y-player.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if(dist < p.size + player.r*0.8){
+        powerDrops.splice(i,1);
+        if(p.key === 'health'){
+          lives++;
+          renderLives();
+        } else {
+          save.inv[p.key] = (save.inv[p.key]||0) + 1;
+          saveSave();
+          renderInventory();
+        }
+        burst(p.x, p.y, 'rgba(186,140,255,0.95)', 14);
+        sfx.gem(4);
+        continue;
+      }
+      if(p.y-p.size > H+40) powerDrops.splice(i,1);
     }
 
     // particles
@@ -691,6 +972,7 @@
     bestScoreLine.textContent = 'BEST: ' + bestScore;
     overScreen.classList.remove('hidden');
     sfx.gameover();
+    renderInventory();
 
     submitBox.style.display = Math.floor(score) > 0 ? 'block' : 'none';
     submitStatus.textContent = '';
@@ -819,6 +1101,34 @@
     ctx.restore();
   }
 
+  function drawPowerDrop(p){
+    ctx.save();
+    const bob = Math.sin(p.wob)*4;
+    const pulse = 1 + Math.sin(p.wob*2)*0.06;
+    ctx.translate(p.x, p.y+bob);
+    ctx.scale(pulse, pulse);
+    ctx.shadowColor = '#ba8cff';
+    ctx.shadowBlur = 22;
+    ctx.fillStyle = 'rgba(40,20,60,0.9)';
+    ctx.strokeStyle = '#ba8cff';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    const sides = 6, r = p.size;
+    for(let i=0;i<sides;i++){
+      const a = (Math.PI*2/sides)*i - Math.PI/2;
+      const px = Math.cos(a)*r, py = Math.sin(a)*r;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.font = (p.size*1.15) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.key === 'health' ? HEALTH_ICON : ITEMS[p.key].icon, 0, 1);
+    ctx.restore();
+  }
+
   function drawParticles(){
     for(const p of particles){
       const a = 1 - p.t/p.life;
@@ -845,6 +1155,7 @@
 
     drawGrid();
     for(const g of gems) drawGem(g);
+    for(const p of powerDrops) drawPowerDrop(p);
     for(const o of obstacles) drawObstacle(o);
     drawParticles();
     drawPlayer();
@@ -857,6 +1168,7 @@
     ensureAudio();
     resetGame();
     state = 'playing';
+    renderInventory();
     startScreen.classList.add('hidden');
     overScreen.classList.add('hidden');
     sfx.start();
@@ -864,6 +1176,14 @@
 
   startBtn.addEventListener('click', startGame);
   retryBtn.addEventListener('click', startGame);
+
+  homeBtn.addEventListener('click', ()=>{
+    state = 'idle';
+    overScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+    renderInventory();
+    refreshLeader();
+  });
 
   submitScoreBtn.addEventListener('click', async ()=>{
     const name = (nameInput.value || '').trim().slice(0,16) || 'Anonymous';
@@ -905,6 +1225,7 @@
   document.getElementById('boardOpenBtn2').addEventListener('click', openBoard);
   document.getElementById('boardOpenBtn3').addEventListener('click', openBoard);
   boardCloseBtn.addEventListener('click', closeBoard);
+  document.getElementById('boardXBtn').addEventListener('click', closeBoard);
 
   boardTabs.addEventListener('click', (e)=>{
     const btn = e.target.closest('.tab');
@@ -944,6 +1265,7 @@
   player.x = W/2; player.y = H - 120; player.targetX = player.x;
 
   setTimeout(refreshLeader, 300); // small delay so the Firebase module has loaded
+  renderInventory();
 
   requestAnimationFrame(loop);
 })();
