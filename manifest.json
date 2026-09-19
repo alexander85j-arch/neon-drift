@@ -2,7 +2,7 @@
   "name": "Neon Drift",
   "short_name": "Neon Drift",
   "description": "Dodge the shards, grab the gems, top the weekly leaderboard.",
-  "start_url": "./neon-dodge-2.html",
+  "start_url": "./neon-dodge-3.html",
   "id": "./neon-dodge-3.html",
   "display": "fullscreen",
   "orientation": "portrait",
